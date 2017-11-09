@@ -13,7 +13,7 @@ type Source struct {
 
 // New a new httpok source
 func New(source string) (*Source, error) {
-	return initialize(source)
+	return Initialize(source)
 }
 
 // Get request wrapper
@@ -26,26 +26,32 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 
 	client := http.Client{}
 	res, err := client.Do(req)
-	defer res.Body.Close()
 
 	if err != nil {
 		return nil, err
 	}
 
+	defer res.Body.Close()
+
 	body, _ := ioutil.ReadAll(res.Body)
 	return body, nil
 }
 
-// IsValid checks to see if the server accepts byte ranges
-func initialize(source string) (*Source, error) {
+// Initialize checks to see if the server accepts byte ranges
+func Initialize(source string) (*Source, error) {
 	req, err := http.NewRequest("GET", source, nil)
 
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 
 	client := http.Client{}
 	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
 	defer res.Body.Close()
 
 	value := res.Header.Get("Accept-Ranges")
