@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/mkapnick/go-vimeo/cache"
 	_ "github.com/mkapnick/go-vimeo/cache"
+	"github.com/mkapnick/go-vimeo/source"
 	"io"
 	"net/http"
 	"strconv"
@@ -60,10 +61,10 @@ func Root(res http.ResponseWriter, req *http.Request) {
 // 	optional
 func ServeBytes(res http.ResponseWriter, req *http.Request) {
 	queryParams := req.URL.Query()
-	source := queryParams.Get("s")
+	s := queryParams.Get("s")
 
 	// throw a bad request if the client did not pass in a source
-	if source == "" {
+	if s == "" {
 		http.Error(res, "s query param is a required field", 400)
 	}
 
@@ -80,7 +81,7 @@ func ServeBytes(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// Step 1. Serve from the cache if stored
-	id := source + "_" + byteRange
+	id := s + "_" + byteRange
 	val, err := cache.Get(id)
 
 	// if no error, then the result exists in the cache
@@ -95,6 +96,10 @@ func ServeBytes(res http.ResponseWriter, req *http.Request) {
 	// Step 3: Request the bytes from the server
 	// Step 4: Cache the response if there is room
 	// Step 5: Return the bytes
+	Source, err := source.New(s)
+	if err != nil || !Source.IsValid {
+		http.Error(res, "source url does not accept byte ranges", 400)
+	}
 }
 
 // main starts here. Creates a server listening on port 4000

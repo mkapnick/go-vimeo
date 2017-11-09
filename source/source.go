@@ -1,9 +1,20 @@
-package httpok
+package source
 
 import (
 	"io/ioutil"
 	"net/http"
 )
+
+type Source struct {
+	Url      string
+	Response *http.Response
+	IsValid  bool
+}
+
+// New a new httpok source
+func New(source string) (*Source, error) {
+	return initialize(source)
+}
 
 // Get request wrapper
 func Get(url string, headers map[string]string) ([]byte, error) {
@@ -25,12 +36,12 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 	return body, nil
 }
 
-// IsValidSource checks to see if the server accepts byte ranges
-func IsValidSource(source string) (bool, error) {
+// IsValid checks to see if the server accepts byte ranges
+func initialize(source string) (*Source, error) {
 	req, err := http.NewRequest("GET", source, nil)
 
 	if err == nil {
-		return false, err
+		return nil, err
 	}
 
 	client := http.Client{}
@@ -40,8 +51,16 @@ func IsValidSource(source string) (bool, error) {
 	value := res.Header.Get("Accept-Ranges")
 
 	if value == "" || value != "bytes" {
-		return false, nil
+		return &Source{
+			Url:      source,
+			Response: res,
+			IsValid:  false,
+		}, nil
 	}
 
-	return true, nil
+	return &Source{
+		Url:      source,
+		Response: res,
+		IsValid:  true,
+	}, nil
 }
