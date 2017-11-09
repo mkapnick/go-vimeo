@@ -2,21 +2,31 @@ package cache
 
 import (
 	"github.com/go-redis/redis"
+	"strconv"
+	"strings"
 )
 
 // cache caches the frames using redis
 // specs: 64MB cache size
 var client *redis.Client
 
+// MB size
+const MB int = 1000000
+
 func init() {
 	client = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
-		DB:       0,  // use default DB
+		DB:       0,  // use default DB,
 	})
 
-	pong, err := client.Ping().Result()
-	println(pong, err)
+	// set the cache to a size of 64MB
+	client.ConfigSet("maxmemory", "64MB")
+}
+
+// Client the redis client
+func Client() *redis.Client {
+	return client
 }
 
 // Set a key/value pair in the redis store
@@ -41,7 +51,40 @@ func Get(key string) (string, error) {
 	return val, nil
 }
 
-// Get info associated with redis db
+// IsValidSize checks if the size of the cache is valid or not. In
+// this example, the size of the cache must not be greater than 64MB
+func IsValidSize() bool {
+	byteSize := Size()
+	mb := byteSize / MB
+
+	if mb > 64 {
+		return false
+	}
+
+	return true
+}
+
+// Size human readable size of the cache so far
+func Size() int {
+	info := Info("Memory")
+	arr := strings.Split(info, "\n")
+	size := 0
+
+out:
+	for _, entry := range arr {
+		s := strings.Split(entry, ":")
+		key := s[0]
+
+		if key == "used_memory" {
+			size, _ = strconv.Atoi(s[1])
+			break out
+		}
+	}
+
+	return size
+}
+
+// Info associated with redis db
 func Info(key string) string {
 	info := client.Info(key)
 	return info.Val()
