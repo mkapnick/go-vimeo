@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// isNumber checks if a string is a number
 func isNumber(val string) (int, bool) {
 	value, err := strconv.Atoi(val)
 	if err != nil {
@@ -17,6 +18,7 @@ func isNumber(val string) (int, bool) {
 	return value, true
 }
 
+// isValidByteRange validates the incoming byte range
 func isValidByteRange(byteRange string) bool {
 	_, isValid := isNumber(byteRange)
 	if isValid {
