@@ -96,10 +96,23 @@ func ServeBytes(res http.ResponseWriter, req *http.Request) {
 	// Step 3: Request the bytes from the server
 	// Step 4: Cache the response if there is room
 	// Step 5: Return the bytes
-	Source, err := source.New(s)
+	Source, err := source.New(s, byteRange)
 	if err != nil || !Source.IsValid {
-		http.Error(res, "source url does not accept byte ranges", 400)
+		http.Error(res, "Invalid source url and/or byte range", 400)
 	}
+
+	// fetch the bytes from the source
+	bytes, err := Source.FetchBytes()
+
+	if err != nil {
+		http.Error(res, "Error fetching bytes from the source server", 400)
+	}
+
+	// cache the bytes
+	cache.Set(id, string(bytes))
+
+	// send the bytes to the client!
+	res.Write(bytes)
 }
 
 // main starts here. Creates a server listening on port 4000

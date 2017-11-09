@@ -1,24 +1,30 @@
 package source
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type Source struct {
-	Url      string
-	Response *http.Response
-	IsValid  bool
+	Url           string
+	Response      *http.Response
+	IsValid       bool
+	ContentLength string
+	ByteRange     string
 }
 
 // New a new httpok source
-func New(source string) (*Source, error) {
-	return Initialize(source)
+func New(source string, byteRange string) (*Source, error) {
+	return Initialize(source, byteRange)
 }
 
-// Get request wrapper
-func Get(url string, headers map[string]string) ([]byte, error) {
-	req, err := http.NewRequest("GET", url, nil)
+// FetchBytes request wrapper
+func (s *Source) FetchBytes() ([]byte, error) {
+	req, err := http.NewRequest("GET", s.Url, nil)
+	req.Header.Set("Range", fmt.Sprintf("bytes=%s", s.ByteRange))
 
 	if err != nil {
 		return nil, err
@@ -38,7 +44,8 @@ func Get(url string, headers map[string]string) ([]byte, error) {
 }
 
 // Initialize checks to see if the server accepts byte ranges
-func Initialize(source string) (*Source, error) {
+// and that the byte range is a valid range
+func Initialize(source string, byteRange string) (*Source, error) {
 	req, err := http.NewRequest("GET", source, nil)
 
 	if err != nil {
@@ -54,9 +61,10 @@ func Initialize(source string) (*Source, error) {
 
 	defer res.Body.Close()
 
-	value := res.Header.Get("Accept-Ranges")
+	rangeVal := res.Header.Get("Accept-Ranges")
 
-	if value == "" || value != "bytes" {
+	if rangeVal == "" || rangeVal != "bytes" {
+		// source does not accept byte ranges
 		return &Source{
 			Url:      source,
 			Response: res,
@@ -64,9 +72,34 @@ func Initialize(source string) (*Source, error) {
 		}, nil
 	}
 
+	// confirm the byteRange is within the content length
+	isValid := true
+	contentLength := res.Header.Get("Content-Length")
+
+	// TODO what if content length is a very large number?
+	contentLengthInt, _ := strconv.Atoi(contentLength)
+	ranges := strings.Split(byteRange, "-")
+
+	if len(ranges) == 2 {
+		start, _ := strconv.Atoi(ranges[0])
+		end, _ := strconv.Atoi(ranges[1])
+
+		if start > contentLengthInt || end > contentLengthInt {
+			isValid = false
+		}
+	} else {
+		startByte, _ := strconv.Atoi(byteRange)
+		if startByte > contentLengthInt {
+			isValid = false
+		}
+		byteRange = byteRange + "-" + contentLength
+	}
+
 	return &Source{
-		Url:      source,
-		Response: res,
-		IsValid:  true,
+		Url:           source,
+		Response:      res,
+		IsValid:       isValid,
+		ContentLength: contentLength,
+		ByteRange:     byteRange,
 	}, nil
 }

@@ -8,19 +8,27 @@ import (
 
 // should be valid on valid source
 func Test_Initialize_Valid(t *testing.T) {
-	Source, _ := source.New("http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4")
+	Source, _ := source.New("http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4", "0")
 	assert.Equal(t, Source.IsValid, true)
 }
 
 // should not be valid on invalid source
 func Test_Initialize_Invalid(t *testing.T) {
-	Source, _ := source.New("http://google.com")
+	Source, _ := source.New("http://google.com", "0")
 	assert.Equal(t, Source.IsValid, false)
 }
 
 // should throw an error on a bad source
 func Test_Initialize_Error(t *testing.T) {
-	_, err := source.New("http://i-am-a-bad-source")
+	_, err := source.New("http://i-am-a-bad-source", "0")
 
 	assert.Equal(t, err.Error(), "Get http://i-am-a-bad-source: dial tcp: lookup i-am-a-bad-source: no such host")
+}
+
+// should fetch bytes from source url
+func Test_FetchBytes(t *testing.T) {
+	Source, _ := source.New("http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4", "0-100")
+	bytes, _ := Source.FetchBytes()
+
+	println(bytes)
 }
