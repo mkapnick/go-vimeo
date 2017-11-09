@@ -6,8 +6,7 @@ import (
 	"strings"
 )
 
-// cache caches the frames using redis
-// specs: 64MB cache size
+// client caches the frames using redis
 var client *redis.Client
 
 // MB size
