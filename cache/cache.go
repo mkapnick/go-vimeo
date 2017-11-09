@@ -30,6 +30,12 @@ func Client() *redis.Client {
 
 // Set a key/value pair in the redis store
 func Set(key string, value string) (bool, error) {
+	// ensure the cache size isn't full before adding to it
+	isValid := IsValidSize()
+	if !isValid {
+		return false, nil
+	}
+
 	err := client.Set(key, value, 0).Err()
 
 	if err != nil {

@@ -88,6 +88,7 @@ func ServeBytes(res http.ResponseWriter, req *http.Request) {
 	if err == nil {
 		// convert the string back into an array of bytes
 		res.Write([]byte(val))
+		return
 	}
 
 	// otherwise we need to do some grunt work
