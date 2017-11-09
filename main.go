@@ -5,22 +5,58 @@ import (
 	_ "github.com/mkapnick/go-vimeo/cache"
 	"io"
 	"net/http"
-	"regexp"
 	"strconv"
+	"strings"
 )
 
-// root is the root route
-func root(res http.ResponseWriter, req *http.Request) {
+func isNumber(val string) (int, bool) {
+	value, err := strconv.Atoi(val)
+	if err != nil {
+		return 0, false
+	}
+	return value, true
+}
+
+func isValidByteRange(byteRange string) bool {
+	_, isValid := isNumber(byteRange)
+	if isValid {
+		return true
+	}
+
+	// not a single number, validate the byte range
+	arr := strings.Split(byteRange, "-")
+	if len(arr) != 2 {
+		return false
+	}
+
+	first, isValid := isNumber(arr[0])
+	if !isValid {
+		return false
+	}
+	second, isValid := isNumber(arr[1])
+	if !isValid {
+		return false
+	}
+
+	if first > second {
+		return false
+	}
+
+	return true
+}
+
+// Root is the root route
+func Root(res http.ResponseWriter, req *http.Request) {
 	io.WriteString(res, "Up and running")
 }
 
-// serveBytes serves bytes from a source in a given range
+// ServeBytes serves bytes from a source in a given range
 // /serve?s=somesource.domain.com&range=20-50
 // queryParams:
 //  1) s: the source
 //  2) range: the range of bytes to serve. End range is inclusive and
 // 	optional
-func serveBytes(res http.ResponseWriter, req *http.Request) {
+func ServeBytes(res http.ResponseWriter, req *http.Request) {
 	queryParams := req.URL.Query()
 	source := queryParams.Get("s")
 
@@ -36,26 +72,8 @@ func serveBytes(res http.ResponseWriter, req *http.Request) {
 		byteRange = "0-100"
 	}
 
-	// regex to verify the byte range format is in the form 10-20
-	validRange := regexp.MustCompile(`0[1-9]|1[0-2]`)
-
-	// numErrs is an error value that checks to ensure the byte range is valid
-	// the byte range can either be a single number (20) or a byte range (0-100)
-	numErrs := 0
-	_, err := strconv.Atoi(byteRange)
-
-	// byteRange is not a single number
-	if err != nil {
-		numErrs += 1
-	}
-
-	// byteRange is not a valid range
-	if !validRange.MatchString(byteRange) {
-		numErrs += 1
-	}
-
-	// throw a 400 if invalid byte range given
-	if numErrs == 2 {
+	isValid := isValidByteRange(byteRange)
+	if !isValid {
 		http.Error(res, "invalid byte range, must be a single byte number or a range like 0-100", 400)
 	}
 
@@ -81,10 +99,10 @@ func serveBytes(res http.ResponseWriter, req *http.Request) {
 func main() {
 
 	// root route
-	http.HandleFunc("/", root)
+	http.HandleFunc("/", Root)
 
 	// the route that handles serving a range of bytes from a specific source
-	http.HandleFunc("/serve", serveBytes)
+	http.HandleFunc("/serve", ServeBytes)
 
 	// expose the web server on port 4000
 	http.ListenAndServe(":4000", nil)
