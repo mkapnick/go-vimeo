@@ -8,9 +8,9 @@
 - Test it out!
 
 ### Testing
- - curl http://localhost:4000/serve?s\=http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4\&range\=0
- - curl http://localhost:4000/serve?s\=http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4\&range\=0-100
- - curl http://localhost:4000/serve?s\=http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4\&range\=75-175
+ - `curl http://localhost:4000/serve?s\=http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4\&range\=0`
+ - `curl http://localhost:4000/serve?s\=http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4\&range\=0-100`
+ - `curl http://localhost:4000/serve?s\=http://storage.googleapis.com/vimeo-test/work-at-vimeo.mp4\&range\=75-175`
 
 ### Bulk Testing
  - `chmod +x ./test.sh`
